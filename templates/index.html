@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>은민이의 To Do List</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+        integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+
+    <!-- Optional JavaScript 왠진 모르겠지만 slim을 빼야 작동함! -->
+    <!-- jQuery and Bootstrap Bundle (includes Popper) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
+        crossorigin="anonymous"></script>
+
+    <!-- 웹폰트 적용하기 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap" rel="stylesheet">
+
+    <!-- 새로고침시 스크롤 위치 기억하기 https://velog.io/@karismajh/JS-%EC%8A%A4%ED%81%AC%EB%A1%A4-%EC%9C%84%EC%B9%98-%EA%B8%B0%EC%96%B5-kkji4bwj  -->
+    <script>history.scrollRestoration = "auto";</script>
+
+    <!-- js 함수 쓰기  -->
+    <script>
+        // 사이트 접속하자마자 새로 todo list 불러오기  
+        $(document).ready(function () {
+            getQuote();
+            showTaskList();
+        });
+
+        function showTaskList() { // 함수명 앞글자 소문자 쓰는거 !
+            $('#card-todo').empty()
+            $('#card-done').empty()
+            $.ajax({
+                type: "GET",
+                url: "/tasklist",
+                data: {},
+                success: function (response) {
+                    let msg = response["msg"]   // result, msg, lists 세 가지 키 
+                    let tasklist = response["tasklist"]   // result, msg, lists 세 가지 키 
+                    console.log(msg)
+                    for (let i = 0; i < tasklist.length; i++) { // i < 리스트원소수 이거 조건 안하면 무한반복!!! let i 하라고 !!! 
+                        let task = tasklist[i]
+                        let status = task["status"]
+                        if ($.trim(status) == "todo") {  // 에이잭스에서 받은 데이터에 공백이 섞여서 안되면 조건문 변수에 $.trim()을 해라!!!
+                            makeTodoList(task)
+                        }
+                        else {
+                            makeDoneList(task)
+                        }
+                    }
+                }
+            })
+        }
+
+        function makeTodoList(task) {
+            let content = task["content"]           // 함수 넣을 때 !!!! ""안에는 ''로 구분해야 한다 변수도!!!!!!!!
+            let temp_html = `
+                            <h5 class="card-title">
+                                <i onclick="convertStatus('todo','${content}')" class="bi bi-circle" > </i> 
+                                <span id="todo-line" title="${content}">
+                                    <span class="todo"> ${content}</span>
+                                </span>
+                                <i onclick="deleteTask('${content}')" class="bi bi-x-lg"></i>
+                                <i onclick="openEdit('${content}')" class="bi bi-pen"></i>
+                            </h5>
+                            `
+            $('#card-todo').append(temp_html) // 이부분 선택자 잘 보기 
+        }
+
+
+        function makeDoneList(task) {
+            let content = task["content"]
+            let temp_html = `
+                            <h5 class="card-title">
+                                <i onclick="convertStatus('done','${content}')" class="bi bi-check-circle"> </i>
+                                <span class="todo done"> ${content}</span>
+                                <i onclick="deleteTask('${content}')" class="bi bi-x-lg"></i>
+                            </h5>
+                            `
+
+
+            $('#card-done').append(temp_html)
+        }
+
+        // function inputTask() { // 여기!!!!!!!!!!!!!!!!! 잘봐!!!!!!!!!!
+        $(function () {
+            $('#add-task').keypress(function (e) {
+                if (e.keyCode == 13) {
+                    let status = "todo"
+                    let content = $('#add-task').val()
+                    addTask(status, content)
+                }
+            })
+        })
+
+        function addTask(status, content) {
+            $.ajax({
+                type: "POST",
+                url: "/add",
+                data: { status_give: status, content_give: content },
+                success: function (response) {
+                    if (response['result'] == 'success') { // success에 따옴표 꼮 쓰라고!!!
+                        let msg = response['msg']
+                        console.log(msg)
+                        window.location.reload();
+
+                    }
+                }
+            })
+        }
+
+        function convertStatus(status, content) {
+            $.ajax({
+                type: "POST",
+                url: "/status",
+                data: { status_give: status, content_give: content },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        let msg = response['msg']
+                        console.log(msg)
+                        window.location.reload();
+
+                    }
+                }
+            })
+        }
+
+        // 컨펌 함수 잘 봐 !!!!! 
+        function deleteTask(content) {
+            let result = confirm("해당 할일을 삭제합니다")
+            if (result == false) {
+                return
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/delete",
+                data: { content_give: content },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        let msg = response['msg']
+                        console.log(msg)
+                        window.location.reload();
+
+                    }
+                }
+            })
+        }
+
+        // 여기 잘 보새용 ~~~~~~~~~~~~히히히히ㅣㅎ히ㅣ히 수정하는 부분!!!! 
+        function openEdit(old_con) {
+            $(`#todo-line[title="${old_con}"]`).empty() // 여기 백틱 사용한거 잘 보삼, 그리고 특정 속성값으로 지정 안해주면 젤 위에 있는 놈이 지워짐
+            temp_html = `
+                        <input id="todo-new-con" type="text" value="${old_con}">
+                        `
+            $(`#todo-line[title="${old_con}"]`).append(temp_html)
+
+            // $(function () {
+            $('#todo-new-con').keypress(function (e) {
+                if (e.keyCode == 13) {
+                    let new_con = $('#todo-new-con').val() // 이 변수를 여기다가 설정하는 게 포인뚜 
+                    editTask(old_con, new_con)
+                }
+            })
+            // })
+        }
+
+        // 아래 부분은 필요 없었다!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // function closeEdit(new_con) {
+        //     $('#todo-line').empty()
+        //     temp_html = `<span class="todo"> ${new_con}</span>`
+        //     $('#todo-line').append(temp_html)
+
+        // }
+
+        function editTask(old_con, new_con) {
+            $.ajax({
+                type: "POST",
+                url: "/edit",
+                data: { old_con_give: old_con, new_con_give: new_con },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        let msg = response['msg']
+                        console.log(msg)
+                        window.location.reload();
+
+                    }
+                }
+            })
+        }
+
+        function getQuote() {
+            $.ajax({
+                type: "GET",
+                url: "/quotes",
+                data: {},
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        let msg = response['msg']
+                        let quote = response['quote'][0]['quote'] // 인덱스 지정 꼭 잊지 말자!! 
+                        console.log(msg)
+                        showQuote(quote);
+                    }
+                }
+            })
+        }
+
+        function showQuote(quote) {
+            $('#quote').empty()
+            $('#quote').append(quote)
+        }
+
+
+    </script>
+
+    <!-- 아이콘 적용하기 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+
+    <!-- CSS 적용하기  -->
+    <style>
+        /* 나만의 To Do List */
+        .wrap {
+            font-family: 'Inter', sans-serif;
+            font-style: normal;
+        }
+
+        .jumbotron {
+            font-weight: 700;
+            font-size: 24px;
+            line-height: 29px;
+            text-align: center;
+            color: #000000;
+            text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        .lead {
+            height: 74px;
+        }
+
+        .card {
+            width: 500px;
+            margin: 0 auto;
+            background: rgba(217, 217, 217, 0.11);
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+            border-radius: 28px;
+        }
+
+        .card-header {
+            background: rgba(217, 217, 217, 0.11);
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        .card-body {
+            font-size: 20px;
+            padding-top: 17px
+        }
+
+        .card-title {
+            margin-bottom: 12px;
+            padding: 5px;
+
+        }
+
+        .bi:hover {
+            color: coral;
+        }
+
+        .bi-check-circle,
+        .bi-circle {
+            font-size: 105%;
+        }
+
+        .bi-x-lg,
+        .bi-pen {
+            float: right;
+        }
+
+        .bi-pen,
+        .bi-x-lg {
+            font-size: 70%;
+            margin: 0 5px;
+        }
+
+        .done {
+            text-decoration: line-through;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            color: inherit;
+            background: #D9D9D9;
+            margin-top: 22px;
+            padding: 15px;
+        }
+
+        /* 가운데 정렬 안 될때 아래처럼 */
+        .btn-primary {
+            display: table;
+            margin: 22px auto;
+        }
+
+        input[type=text] {
+            border: none;
+            border-radius: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="wrap">
+
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+                <h1 class="display-4">SIMPLE TO DO LIST</h1>
+                <p class="lead" id="quote">Getting things done quotes</p>
+            </div>
+        </div>
+
+        <div id="list">
+
+            <div class="todo-list">
+                <div class="card bg-light mb-3">
+                    <div class="card-header">Todo</div>
+                    <div class="card-body">
+                        <div id="card-todo">
+                            <h5 class="card-title">
+                                <i class="bi bi-circle"></i>
+                                <san class="todo">할 일 1</span>
+                            </h5>
+                            <h5 class="card-title">
+                                <i class="bi bi-circle"></i>
+                                <span class="todo">할 일 1</span>
+                            </h5>
+                            <h5 class="card-title">
+                                <i class="bi bi-circle"></i>
+                                <span class="todo">할 일 1</span>
+                            </h5>
+                        </div>
+                        <div class="add-btn">
+                            <input type="text" id="add-task" placeholder="+ 할 일 추가하기"
+                                class="btn btn-secondary btn-lg btn-block">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample"
+                aria-expanded="false" aria-controls="collapseExample">
+                Show Done List!
+            </button>
+
+            <div class="collapse" id="collapseExample">
+                <div class="done-list">
+                    <div class="card bg-light mb-3">
+                        <div class="card-header">Done!</div>
+                        <div class="card-body">
+                            <div id="card-done">
+                                <h5 class="card-title">
+                                    <i class="bi bi-check-circle"> </i>
+                                    <span class="todo done"> 다이소 가서 물건 사기</span>
+                                </h5>
+                                <h5 class="card-title">
+                                    <i class="bi bi-check-circle"> </i>
+                                    <span class="todo done"> 다이소 가서 물건 사기</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+
+        </div>
+</body>
+
+</html>
