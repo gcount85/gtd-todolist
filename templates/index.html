@@ -39,7 +39,7 @@
             $('#card-done').empty()
             $.ajax({
                 type: "GET",
-                url: "/tasklist",
+                url: "/tasklists",
                 data: {},
                 success: function (response) {
                     let msg = response["msg"]   // result, msg, lists 세 가지 키 
@@ -103,7 +103,7 @@
         function addTask(status, content) {
             $.ajax({
                 type: "POST",
-                url: "/add",
+                url: "/tasks",
                 data: { status_give: status, content_give: content },
                 success: function (response) {
                     if (response['result'] == 'success') { // success에 따옴표 꼮 쓰라고!!!
@@ -140,8 +140,8 @@
             }
 
             $.ajax({
-                type: "POST",
-                url: "/delete",
+                type: "DELETE",
+                url: "/tasks",
                 data: { content_give: content },
                 success: function (response) {
                     if (response['result'] == 'success') {
@@ -182,8 +182,8 @@
 
         function editTask(old_con, new_con) {
             $.ajax({
-                type: "POST",
-                url: "/edit",
+                type: "PUT",
+                url: "/tasks",
                 data: { old_con_give: old_con, new_con_give: new_con },
                 success: function (response) {
                     if (response['result'] == 'success') {

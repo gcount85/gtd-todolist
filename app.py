@@ -14,14 +14,14 @@ def home():
     return render_template('index.html')
 
 
-@app.route('/tasklist', methods=["GET"])
+@app.route('/tasklists', methods=["GET"])
 def show_task_lists():
     tasklist = list(db.tasklist.find({}, {'_id':0}))
     return jsonify({'result': 'success', 'msg':'할일 목록 연결되었습니다', 'tasklist': tasklist})
 
 
 
-@app.route('/add', methods=["POST"])
+@app.route('/tasks', methods=["POST"])
 def add_task():
     status = request.form['status_give']
     content = request.form['content_give']
@@ -41,7 +41,7 @@ def convert_status():
 
 
 
-@app.route('/delete', methods=['POST'])
+@app.route('/tasks', methods=['DELETE'])
 def delete_task():
     content = request.form['content_give']
     db.tasklist.delete_one({'content':content})
@@ -49,7 +49,7 @@ def delete_task():
 
 
 
-@app.route('/edit', methods=['POST'])
+@app.route('/tasks', methods=['PUT'])
 def edit_task():
     old_con = request.form['old_con_give']
     new_con = request.form['new_con_give']
